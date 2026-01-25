@@ -1,0 +1,18 @@
+<svg width="1440" height="2560" viewBox="0 0 1440 2560" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1440" height="2560" fill="#0B0D12"></rect>
+
+  <!-- Icon -->
+  <g transform="translate(0,0)">
+    <circle cx="720" cy="1120" r="210" fill="none" stroke="#45C27E" stroke-width="92" stroke-linecap="round" stroke-dasharray="1135 325" stroke-dashoffset="140"></circle>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="720" y="1460" text-anchor="middle" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="140" font-weight="700" fill="#FFFFFF" letter-spacing="-2">
+    locl
+  </text>
+
+  <!-- Claim -->
+  <text x="720" y="1570" text-anchor="middle" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="48" font-weight="500" fill="#9AA4B2">
+    What’s happening near you.
+  </text>
+</svg>
