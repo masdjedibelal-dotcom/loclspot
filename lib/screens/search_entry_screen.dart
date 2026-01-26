@@ -308,8 +308,9 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
                         controller: _controller,
                         hintText:
                             'Suche nach Titel, Kategorie, Straße…',
-                        borderColor: MingaTheme.borderStrong,
-                        focusedBorderColor: MingaTheme.borderStrong,
+                        borderColor: MingaTheme.textPrimary.withOpacity(0.18),
+                        focusedBorderColor:
+                            MingaTheme.textPrimary.withOpacity(0.18),
                         focusNode: _searchFocusNode,
                         textInputAction: TextInputAction.search,
                         prefixIcon: Icon(
@@ -423,7 +424,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _SearchStickyHeaderDelegate(
-                  height: 140,
+                  height: 170,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                     child: Column(
@@ -432,8 +433,9 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
                           controller: _controller,
                           hintText:
                               'Suche nach Titel, Kategorie, Straße…',
-                          borderColor: MingaTheme.borderStrong,
-                          focusedBorderColor: MingaTheme.borderStrong,
+                          borderColor: MingaTheme.textPrimary.withOpacity(0.18),
+                          focusedBorderColor:
+                              MingaTheme.textPrimary.withOpacity(0.18),
                           focusNode: _searchFocusNode,
                           textInputAction: TextInputAction.search,
                           prefixIcon: Icon(
@@ -474,6 +476,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
                             child: _buildFilterRow(),
                           ),
                         ),
+                        const SizedBox(height: 8),
                       ],
                     ),
                   ),
@@ -564,7 +567,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
       }
       return ListView.separated(
         padding: EdgeInsets.only(
-          top: 20,
+          top: 24,
           bottom: bottomNavSafePadding(context),
         ),
         itemCount: filtered.length,
@@ -592,7 +595,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
     }
     return ListView.separated(
       padding: EdgeInsets.only(
-        top: 20,
+        top: 24,
         bottom: bottomNavSafePadding(context),
       ),
       itemCount: filteredPlaces.length,

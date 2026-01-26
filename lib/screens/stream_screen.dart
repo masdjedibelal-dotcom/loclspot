@@ -453,6 +453,9 @@ class StreamScreenState extends State<StreamScreen>
       } else if (_visibleCount > _sortedPlaces.length) {
         _visibleCount = _sortedPlaces.length;
       }
+      if (_mapPreviews.isEmpty && _sortedPlaces.isNotEmpty) {
+        _mapPreviews = _buildFallbackTickerPreviews(_sortedPlaces);
+      }
     });
     debugPrint('VISIBLE count=$_visibleCount');
     _scheduleMapRefresh();
@@ -1633,98 +1636,116 @@ class StreamScreenState extends State<StreamScreen>
               ),
               SizedBox(height: tokens.space.s8),
               Expanded(
-                  child: visiblePreviews.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Keine Nachrichten aktuell.',
-                            style: tokens.type.body.copyWith(
-                              color: tokens.colors.textSecondary,
-                              fontSize: 12,
-                            ),
+                child: visiblePreviews.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Keine Nachrichten aktuell.',
+                          style: tokens.type.body.copyWith(
+                            color: tokens.colors.textSecondary,
+                            fontSize: 12,
                           ),
-                        )
-                      : ListView.separated(
-                          itemCount: visiblePreviews.length,
-                        separatorBuilder: (_, __) =>
-                            SizedBox(height: tokens.space.s8),
-                        itemBuilder: (context, index) {
-                          final preview = visiblePreviews[index];
-                          final message = preview.message;
-                          return InkWell(
-                            onTap: () => _openPlaceFromMap(preview.place),
-                            borderRadius:
-                                BorderRadius.circular(tokens.radius.md),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: tokens.space.s8,
-                                vertical: tokens.space.s6,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 42,
-                                    height: 42,
-                                    decoration: BoxDecoration(
-                                      color: tokens.colors.surfaceStrong
-                                          .withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(
-                                        tokens.radius.md,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.chat_bubble,
-                                      color: tokens.colors.textSecondary,
-                                      size: 18,
-                                    ),
+                        ),
+                      )
+                    : _isTickerExpanded
+                        ? ListView.separated(
+                            itemCount: visiblePreviews.length,
+                            separatorBuilder: (_, __) =>
+                                SizedBox(height: tokens.space.s8),
+                            itemBuilder: (context, index) {
+                              return _buildLiveTickerPreviewRow(
+                                tokens,
+                                visiblePreviews[index],
+                              );
+                            },
+                          )
+                        : Column(
+                            children: [
+                              for (final preview in visiblePreviews)
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(bottom: tokens.space.s8),
+                                  child: _buildLiveTickerPreviewRow(
+                                    tokens,
+                                    preview,
                                   ),
-                                  SizedBox(width: tokens.space.s8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          preview.place.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: tokens.type.body.copyWith(
-                                            color: tokens.colors.textPrimary,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        SizedBox(height: tokens.space.s4),
-                                        Text(
-                                          message?.text.trim().isNotEmpty == true
-                                              ? message!.text.trim()
-                                              : 'Noch keine Nachricht',
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: tokens.type.caption.copyWith(
-                                            color: tokens.colors.textSecondary,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: tokens.space.s8),
-                                  Text(
-                                    _formatRelativeTime(message?.createdAt),
-                                    style: tokens.type.caption.copyWith(
-                                      color: tokens.colors.textMuted,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                                ),
+                            ],
+                          ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveTickerPreviewRow(
+    AppTokens tokens,
+    _RoomMessagePreview preview,
+  ) {
+    final message = preview.message;
+    return InkWell(
+      onTap: () => _openPlaceFromMap(preview.place),
+      borderRadius: BorderRadius.circular(tokens.radius.md),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.space.s8,
+          vertical: tokens.space.s6,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: tokens.colors.surfaceStrong.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(tokens.radius.md),
+              ),
+              child: Icon(
+                Icons.chat_bubble,
+                color: tokens.colors.textSecondary,
+                size: 18,
+              ),
+            ),
+            SizedBox(width: tokens.space.s8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    preview.place.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.type.body.copyWith(
+                      color: tokens.colors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  SizedBox(height: tokens.space.s4),
+                  Text(
+                    message?.text.trim().isNotEmpty == true
+                        ? message!.text.trim()
+                        : 'Noch keine Nachricht',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.type.caption.copyWith(
+                      color: tokens.colors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: tokens.space.s8),
+            Text(
+              _formatRelativeTime(message?.createdAt),
+              style: tokens.type.caption.copyWith(
+                color: tokens.colors.textMuted,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
       ),
     );
