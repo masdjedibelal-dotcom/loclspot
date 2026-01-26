@@ -18,6 +18,8 @@ class GlassTextField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final Color? borderColor;
+  final Color? focusedBorderColor;
 
   const GlassTextField({
     super.key,
@@ -36,6 +38,8 @@ class GlassTextField extends StatelessWidget {
     this.onSubmitted,
     this.prefixIcon,
     this.suffixIcon,
+    this.borderColor,
+    this.focusedBorderColor,
   });
 
   @override
@@ -43,7 +47,8 @@ class GlassTextField extends StatelessWidget {
     final tokens = context.tokens;
     final hasError = errorText != null && errorText!.isNotEmpty;
     final borderColor =
-        hasError ? tokens.input.errorColor : tokens.colors.border;
+        hasError ? tokens.input.errorColor : (this.borderColor ?? tokens.colors.border);
+    final focusColor = focusedBorderColor ?? tokens.input.focusRingColor;
 
     return GlassSurface(
       radius: tokens.input.radius,
@@ -81,7 +86,7 @@ class GlassTextField extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(tokens.input.radius),
             borderSide: BorderSide(
-              color: tokens.input.focusRingColor,
+              color: focusColor,
               width: tokens.input.focusRingWidth,
             ),
           ),

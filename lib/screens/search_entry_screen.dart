@@ -302,6 +302,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
                         controller: _controller,
                         hintText:
                             'Suche nach Titel, Kategorie, Straße…',
+                        borderColor: MingaTheme.borderSubtle,
                         textInputAction: TextInputAction.search,
                         prefixIcon: Icon(
                           Icons.search,
@@ -423,6 +424,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
                           controller: _controller,
                           hintText:
                               'Suche nach Titel, Kategorie, Straße…',
+                          borderColor: MingaTheme.borderSubtle,
                           textInputAction: TextInputAction.search,
                           prefixIcon: Icon(
                             Icons.search,
@@ -551,11 +553,9 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
         );
       }
       return ListView.separated(
-        padding: EdgeInsets.fromLTRB(
-          0,
-          12,
-          0,
-          bottomNavSafePadding(context),
+        padding: EdgeInsets.only(
+          top: 20,
+          bottom: bottomNavSafePadding(context),
         ),
         itemCount: filtered.length,
         separatorBuilder: (_, __) => Divider(
@@ -581,11 +581,9 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
       );
     }
     return ListView.separated(
-      padding: EdgeInsets.fromLTRB(
-        0,
-        12,
-        0,
-        bottomNavSafePadding(context),
+      padding: EdgeInsets.only(
+        top: 20,
+        bottom: bottomNavSafePadding(context),
       ),
       itemCount: filteredPlaces.length,
       separatorBuilder: (_, __) => Divider(

@@ -574,6 +574,8 @@ class _HomeScreenState extends State<HomeScreen> {
   ) async {
     if (!SupabaseGate.isEnabled || collabs.isEmpty) return;
     for (final collab in collabs) {
+      final heroUrl = collab.heroImageUrl?.trim();
+      if (heroUrl != null && heroUrl.isNotEmpty) continue;
       final existing = _fallbackMediaByCollabId[collab.id];
       if (existing != null && existing.isNotEmpty) continue;
       final placeIds = collab.spotPoolIds;

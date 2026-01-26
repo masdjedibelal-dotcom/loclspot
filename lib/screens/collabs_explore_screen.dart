@@ -429,6 +429,8 @@ class _CollabsExploreScreenState extends State<CollabsExploreScreen> {
     if (_systemCollabs.isEmpty) return;
     final updated = Map<String, List<String>>.from(_fallbackMediaByCollabId);
     for (final collab in _systemCollabs) {
+      final heroUrl = collab.heroImageUrl?.trim();
+      if (heroUrl != null && heroUrl.isNotEmpty) continue;
       if (updated.containsKey(collab.id)) continue;
       final placeIds = collab.spotPoolIds;
       if (placeIds.isEmpty) continue;

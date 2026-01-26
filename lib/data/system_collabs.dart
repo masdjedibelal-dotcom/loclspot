@@ -53,6 +53,26 @@ const CollabDefinition _eventsHighlightsYearCollab = CollabDefinition(
   requiresRuntime: false,
 );
 
+const Map<String, String> _localSystemCollabCovers = {
+  'asiatisch_nearby': 'asset:assets/system_collabs/asiatisch_nearby.png',
+  'brunch_breakfast_nearby': 'asset:assets/system_collabs/brunch_breakfast_nearby.png',
+  'cafes_nearby': 'asset:assets/system_collabs/cafes_nearby.png',
+  'fastfood_nearby': 'asset:assets/system_collabs/fastfood_nearby.png',
+  'museums_nearby': 'asset:assets/system_collabs/museums_nearby.png',
+  'nature_nearby': 'asset:assets/system_collabs/nature_nearby.png',
+  'open_now_food_nearby': 'asset:assets/system_collabs/open_now_food_nearby.png',
+  'pizza_italienisch_nearby':
+      'asset:assets/system_collabs/pizza_italienisch_nearby.png',
+  'top_bars_nearby': 'asset:assets/system_collabs/top_bars_nearby.png',
+  'top_sights_nearby': 'asset:assets/system_collabs/top_sights_nearby.png',
+  'top_spots_nearby': 'asset:assets/system_collabs/top_spots_nearby.png',
+  'walks_nearby': 'asset:assets/system_collabs/walks_nearby.png',
+  eventsThisWeekCollabId: 'asset:assets/system_collabs/events_this_week.png',
+  eventsTodayCollabId: 'asset:assets/system_collabs/events_today.png',
+  eventsHighlightsYearCollabId:
+      'asset:assets/system_collabs/events_highlights_year.png',
+};
+
 class SystemCollabsStore {
   static List<CollabDefinition>? _cache;
 
@@ -98,14 +118,14 @@ class SystemCollabsStore {
       final limit = (map['limit'] as num?)?.toInt();
 
       final heroImageUrlRaw = map['hero_image_url']?.toString();
-      final heroImageUrl =
+      final resolvedHeroImageUrl =
           heroImageUrlRaw != null && heroImageUrlRaw.trim().isNotEmpty
               ? heroImageUrlRaw.trim()
-              : null;
+              : _localSystemCollabCovers[listId];
       final heroTypeRaw = map['hero_type']?.toString();
       final heroType = heroTypeRaw != null && heroTypeRaw.trim().isNotEmpty
           ? heroTypeRaw.trim()
-          : (heroImageUrl != null ? 'image' : 'gradient');
+          : (resolvedHeroImageUrl != null ? 'image' : 'gradient');
       final gradientKeyRaw = map['gradient_key']?.toString();
       final gradientKey = gradientKeyRaw != null && gradientKeyRaw.trim().isNotEmpty
           ? gradientKeyRaw.trim()
@@ -121,7 +141,7 @@ class SystemCollabsStore {
           creatorName: 'LocalSpots',
           creatorAvatarUrl: null,
           heroType: heroType,
-          heroImageUrl: heroImageUrl,
+          heroImageUrl: resolvedHeroImageUrl,
           gradientKey: gradientKey,
           query: CollabQuery(
             includeCategories: includeCategories,

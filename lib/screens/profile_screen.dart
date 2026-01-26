@@ -238,7 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (!SupabaseGate.isEnabled) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Supabase noch nicht konfiguriert. Bitte Demo Login verwenden.'),
+                    content: Text('Supabase noch nicht konfiguriert.'),
                     duration: Duration(seconds: 3),
                     backgroundColor: MingaTheme.warningOrange,
                   ),
@@ -277,40 +277,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SizedBox(width: 12),
                 Text('Login mit Google', style: MingaTheme.body),
               ],
-            ),
-          ),
-        ),
-        SizedBox(height: 16),
-        // Demo Login Button
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () {
-              AuthService.instance.signInMock().catchError((e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Fehler beim Demo Login: $e'),
-                      duration: const Duration(seconds: 3),
-                      backgroundColor: MingaTheme.dangerRed,
-                    ),
-                  );
-                }
-              });
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: MingaTheme.accentGreen,
-              side: BorderSide(color: MingaTheme.accentGreen, width: 2),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MingaTheme.radiusMd),
-              ),
-            ),
-            child: Text(
-              SupabaseGate.isEnabled
-                  ? 'Demo Login (Supabase)'
-                  : 'Demo Login',
-              style: MingaTheme.body,
             ),
           ),
         ),

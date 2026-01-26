@@ -2338,7 +2338,7 @@ class _CollabDetailScreenState extends State<CollabDetailScreen> {
         text: '$number',
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 20,
+          fontSize: 26,
           fontWeight: FontWeight.w700,
         ),
       ),

@@ -674,8 +674,12 @@ class StreamScreenState extends State<StreamScreen>
       return now.difference(createdAt).inHours < 24;
     }).toList();
 
+    final resolvedPreviews = recentOnly.isNotEmpty
+        ? recentOnly
+        : _buildFallbackTickerPreviews(rooms);
+
     setState(() {
-      _mapPreviews = recentOnly.take(10).toList();
+      _mapPreviews = resolvedPreviews.take(10).toList();
       _isMapLoading = false;
     });
     if (kDebugMode) {
@@ -683,6 +687,15 @@ class StreamScreenState extends State<StreamScreen>
         '🧪 LiveTicker refresh loaded=${_mapPreviews.length} rooms=${rooms.length}',
       );
     }
+  }
+
+  List<_RoomMessagePreview> _buildFallbackTickerPreviews(List<Place> rooms) {
+    final liveRooms = rooms.where((place) => place.liveCount > 0).toList();
+    final candidates = liveRooms.isNotEmpty ? liveRooms : rooms;
+    return candidates
+        .take(10)
+        .map((place) => _RoomMessagePreview(place: place, message: null))
+        .toList();
   }
 
   void _rebuildMapOverlays() {
