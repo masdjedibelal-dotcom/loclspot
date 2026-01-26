@@ -987,7 +987,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildLogoMark() {
     return Text(
-      'Mingalive',
+      'locl',
       style: MingaTheme.titleSmall.copyWith(
         fontWeight: FontWeight.w800,
         letterSpacing: -0.4,

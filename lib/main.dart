@@ -45,7 +45,7 @@ class MingaLiveApp extends StatelessWidget {
     return AuthProvider(
       authService: authService,
       child: MaterialApp(
-        title: 'MingaLive',
+        title: 'locl',
         theme: AppTheme.dark(),
         home: FutureBuilder<bool>(
           future: _isOnboardingSeen(),

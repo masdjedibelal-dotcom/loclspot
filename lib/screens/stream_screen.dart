@@ -1530,9 +1530,12 @@ class StreamScreenState extends State<StreamScreen>
       _tickerInitialized = true;
     }
     _tickerExtent = _tickerExtent.clamp(minHeight, maxHeight);
-    final visiblePreviews = _isTickerExpanded
-        ? _mapPreviews
-        : _mapPreviews.take(3).toList();
+    final fallbackPreviews = _buildFallbackTickerPreviews(
+      _mapPlaces.isNotEmpty ? _mapPlaces : _sortedPlaces,
+    );
+    final previews = _mapPreviews.isNotEmpty ? _mapPreviews : fallbackPreviews;
+    final visiblePreviews =
+        _isTickerExpanded ? previews : previews.take(3).toList();
 
     final toggleTop = media.padding.top + 40;
     final panelTop = toggleTop + 36 + tokens.space.s8;

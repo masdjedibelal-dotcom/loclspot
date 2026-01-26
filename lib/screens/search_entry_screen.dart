@@ -39,6 +39,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
     with SingleTickerProviderStateMixin {
   final EventRepository _eventRepository = EventRepository();
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final PlaceRepository _repository = PlaceRepository();
   final LocationService _locationService = LocationService();
   late final GptSearchSuggestionsService _gptService =
@@ -82,6 +83,7 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
   @override
   void dispose() {
     _controller.dispose();
+    _searchFocusNode.dispose();
     _tabController.removeListener(_handleTabChanged);
     _tabController.dispose();
     _searchDebounce?.cancel();
@@ -112,6 +114,10 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
       });
       return;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _searchFocusNode.requestFocus();
+    });
     _searchDebounce = Timer(const Duration(milliseconds: 280), () {
       _runSearch(query);
     });
@@ -302,7 +308,9 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
                         controller: _controller,
                         hintText:
                             'Suche nach Titel, Kategorie, Straße…',
-                        borderColor: MingaTheme.borderSubtle,
+                        borderColor: MingaTheme.borderStrong,
+                        focusedBorderColor: MingaTheme.borderStrong,
+                        focusNode: _searchFocusNode,
                         textInputAction: TextInputAction.search,
                         prefixIcon: Icon(
                           Icons.search,
@@ -424,7 +432,9 @@ class _SearchEntryScreenState extends State<SearchEntryScreen>
                           controller: _controller,
                           hintText:
                               'Suche nach Titel, Kategorie, Straße…',
-                          borderColor: MingaTheme.borderSubtle,
+                          borderColor: MingaTheme.borderStrong,
+                          focusedBorderColor: MingaTheme.borderStrong,
+                          focusNode: _searchFocusNode,
                           textInputAction: TextInputAction.search,
                           prefixIcon: Icon(
                             Icons.search,
@@ -905,25 +915,29 @@ class _SearchFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: GlassSurface(
-        radius: 14,
-        blurSigma: 12,
-        overlayColor: isActive
-            ? MingaTheme.glassOverlayStrong
-            : MingaTheme.glassOverlaySoft,
-        borderColor:
-            isActive ? MingaTheme.accentGreenBorder : MingaTheme.borderSubtle,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Text(
-            label,
-            style: MingaTheme.bodySmall.copyWith(
-              color: isActive
-                  ? MingaTheme.accentGreen
-                  : MingaTheme.textSecondary,
-              fontWeight: FontWeight.w600,
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: GlassSurface(
+          radius: 14,
+          blurSigma: 12,
+          overlayColor: isActive
+              ? MingaTheme.glassOverlayStrong
+              : MingaTheme.glassOverlaySoft,
+          borderColor:
+              isActive ? MingaTheme.accentGreenBorder : MingaTheme.borderSubtle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Text(
+              label,
+              style: MingaTheme.bodySmall.copyWith(
+                color: isActive
+                    ? MingaTheme.accentGreen
+                    : MingaTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
