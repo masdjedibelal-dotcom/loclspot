@@ -141,6 +141,36 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Sign in with Apple OAuth (required by App Review when other 3rd-party login is present)
+  Future<void> signInWithApple() async {
+    if (!SupabaseGate.isEnabled) {
+      if (kDebugMode) {
+        debugPrint('⚠️ AuthService: Apple login attempted but Supabase is not enabled');
+      }
+      throw Exception('Supabase ist noch nicht konfiguriert.');
+    }
+
+    try {
+      if (kDebugMode) {
+        debugPrint('🔄 AuthService: Initiating Apple OAuth sign-in...');
+      }
+      final supabase = SupabaseGate.client;
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.apple,
+        redirectTo: kIsWeb ? Uri.base.origin : AppConfig.oauthRedirectUri,
+        authScreenLaunchMode: LaunchMode.externalApplication,
+      );
+      if (kDebugMode) {
+        debugPrint('✅ AuthService: Apple OAuth sign-in initiated successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ AuthService: Apple OAuth sign-in failed: $e');
+      }
+      throw Exception('Failed to sign in with Apple: $e');
+    }
+  }
+
   /// Sign out the current user
   /// Works for both Supabase users and demo users
   Future<void> signOut() async {

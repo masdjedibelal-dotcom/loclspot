@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'theme.dart';
 import '../models/app_user.dart';
 import '../models/place.dart';
+import 'dart:io';
 import '../services/auth_service.dart';
 import '../services/supabase_gate.dart';
 import '../services/supabase_collabs_repository.dart';
@@ -230,6 +231,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 40),
+        // Login mit Apple Button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              if (!SupabaseGate.isEnabled) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Supabase noch nicht konfiguriert.'),
+                    duration: Duration(seconds: 3),
+                    backgroundColor: MingaTheme.warningOrange,
+                  ),
+                );
+                return;
+              }
+
+              AuthService.instance.signInWithApple().catchError((e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Fehler beim Apple Login: $e'),
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: MingaTheme.dangerRed,
+                    ),
+                  );
+                }
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MingaTheme.buttonLightBackground,
+              foregroundColor: MingaTheme.buttonLightForeground,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MingaTheme.radiusMd),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.apple,
+                  size: 22,
+                  color: MingaTheme.buttonLightForeground,
+                ),
+                SizedBox(width: 12),
+                Text('Login mit Apple', style: MingaTheme.body),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 12),
         // Login mit Google Button
         SizedBox(
           width: double.infinity,
@@ -280,6 +332,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
+        if (Platform.isIOS) ...[
+          SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                AuthService.instance.signInWithApple().catchError((e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Fehler beim Apple Login: $e'),
+                        duration: const Duration(seconds: 3),
+                        backgroundColor: MingaTheme.dangerRed,
+                      ),
+                    );
+                  }
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MingaTheme.radiusMd),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FaIcon(FontAwesomeIcons.apple, color: Colors.white, size: 22),
+                  SizedBox(width: 12),
+                  Text('Mit Apple anmelden', style: MingaTheme.body),
+                ],
+              ),
+            ),
+          ),
+        ],
         SizedBox(height: 32),
       ],
     );
