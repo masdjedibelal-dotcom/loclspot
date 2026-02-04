@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
@@ -127,7 +128,8 @@ class AuthService extends ChangeNotifier {
         redirectTo: kIsWeb
             ? Uri.base.origin
             : AppConfig.oauthRedirectUri,
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        authScreenLaunchMode:
+            Platform.isIOS ? LaunchMode.inAppWebView : LaunchMode.externalApplication,
       );
       // User will be updated via onAuthStateChange listener
       if (kDebugMode) {
@@ -158,7 +160,8 @@ class AuthService extends ChangeNotifier {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: kIsWeb ? Uri.base.origin : AppConfig.oauthRedirectUri,
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        authScreenLaunchMode:
+            Platform.isIOS ? LaunchMode.inAppWebView : LaunchMode.externalApplication,
       );
       if (kDebugMode) {
         debugPrint('✅ AuthService: Apple OAuth sign-in initiated successfully');
