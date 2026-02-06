@@ -128,8 +128,9 @@ class AuthService extends ChangeNotifier {
         redirectTo: kIsWeb
             ? Uri.base.origin
             : AppConfig.oauthRedirectUri,
-        authScreenLaunchMode:
-            Platform.isIOS ? LaunchMode.inAppWebView : LaunchMode.externalApplication,
+        authScreenLaunchMode: Platform.isIOS
+            ? LaunchMode.inAppBrowserView
+            : LaunchMode.externalApplication,
       );
       // User will be updated via onAuthStateChange listener
       if (kDebugMode) {
@@ -160,8 +161,9 @@ class AuthService extends ChangeNotifier {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: kIsWeb ? Uri.base.origin : AppConfig.oauthRedirectUri,
-        authScreenLaunchMode:
-            Platform.isIOS ? LaunchMode.inAppWebView : LaunchMode.externalApplication,
+        authScreenLaunchMode: Platform.isIOS
+            ? LaunchMode.inAppBrowserView
+            : LaunchMode.externalApplication,
       );
       if (kDebugMode) {
         debugPrint('✅ AuthService: Apple OAuth sign-in initiated successfully');
