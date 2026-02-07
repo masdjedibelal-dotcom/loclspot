@@ -19,8 +19,6 @@ void main() async {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
-      authFlowType: AuthFlowType.pkce,
-      authCallbackUrlHostname: AppConfig.oauthRedirectHost,
     );
     SupabaseGate.enabled = true;
   } else {
@@ -72,13 +70,6 @@ class MingaLiveApp extends StatelessWidget {
         ),
         debugShowCheckedModeBanner: false,
       );
-
-    if (SupabaseGate.isEnabled) {
-      app = SupabaseAuth(
-        auth: SupabaseGate.client.auth,
-        child: app,
-      );
-    }
 
     return AuthProvider(
       authService: authService,
