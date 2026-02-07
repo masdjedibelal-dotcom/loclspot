@@ -19,6 +19,8 @@ void main() async {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
+      authFlowType: AuthFlowType.pkce,
+      authCallbackUrlHostname: AppConfig.oauthRedirectHost,
     );
     SupabaseGate.enabled = true;
   } else {
@@ -42,9 +44,7 @@ class MingaLiveApp extends StatelessWidget {
     // Use singleton AuthService instance
     final authService = AuthService.instance;
 
-    return AuthProvider(
-      authService: authService,
-      child: MaterialApp(
+    Widget app = MaterialApp(
         title: 'locl',
         theme: AppTheme.dark(),
         home: FutureBuilder<bool>(
@@ -71,7 +71,18 @@ class MingaLiveApp extends StatelessWidget {
           },
         ),
         debugShowCheckedModeBanner: false,
-      ),
+      );
+
+    if (SupabaseGate.isEnabled) {
+      app = SupabaseAuth(
+        auth: SupabaseGate.client.auth,
+        child: app,
+      );
+    }
+
+    return AuthProvider(
+      authService: authService,
+      child: app,
     );
   }
 }

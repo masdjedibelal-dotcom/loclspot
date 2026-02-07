@@ -5,6 +5,8 @@ class AppConfig {
   static const String _oauthRedirectHost = 'login-callback';
   static const String _defaultSupabaseUrl = 'https://gsdkquzddlpzxgwxigmf.supabase.co';
   static const String _defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZGtxdXpkZGxwenhnd3hpZ21mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyNDUwMzUsImV4cCI6MjA4MzgyMTAzNX0.rlAoxRf-Zv-OINSjJOHhNsx2ndmhnMERldvTeMwAHJA';
+  static const String _defaultGoogleWebClientId = '';
+  static const String _defaultGoogleIosClientId = '';
 
   static String get supabaseUrl {
     const defined = String.fromEnvironment('SUPABASE_URL');
@@ -22,7 +24,25 @@ class AppConfig {
     return _defaultSupabaseAnonKey;
   }
 
+  static String get googleWebClientId {
+    const defined = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+    if (defined.isNotEmpty) {
+      return defined;
+    }
+    return _defaultGoogleWebClientId;
+  }
+
+  static String get googleIosClientId {
+    const defined = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+    if (defined.isNotEmpty) {
+      return defined;
+    }
+    return _defaultGoogleIosClientId;
+  }
+
   static String get oauthRedirectUri =>
       '$_oauthRedirectScheme://$_oauthRedirectHost';
+
+  static String get oauthRedirectHost => _oauthRedirectHost;
 }
 
