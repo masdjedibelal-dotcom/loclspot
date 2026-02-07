@@ -146,15 +146,19 @@ class AuthService extends ChangeNotifier {
           redirectTo: Uri.base.origin,
         );
       } else {
-        if (AppConfig.googleWebClientId.isEmpty) {
-          throw Exception(
-            'Google Web Client ID fehlt. Setze --dart-define=GOOGLE_WEB_CLIENT_ID=...',
+        final hasNativeGoogleConfig = AppConfig.googleWebClientId.isNotEmpty &&
+            (!Platform.isIOS || AppConfig.googleIosClientId.isNotEmpty);
+
+        if (!hasNativeGoogleConfig) {
+          // Fallback: browser-based OAuth if native config is missing
+          await supabase.auth.signInWithOAuth(
+            OAuthProvider.google,
+            redirectTo: AppConfig.oauthRedirectUri,
+            authScreenLaunchMode: Platform.isIOS
+                ? LaunchMode.inAppBrowserView
+                : LaunchMode.externalApplication,
           );
-        }
-        if (Platform.isIOS && AppConfig.googleIosClientId.isEmpty) {
-          throw Exception(
-            'Google iOS Client ID fehlt. Setze --dart-define=GOOGLE_IOS_CLIENT_ID=...',
-          );
+          return;
         }
 
         final googleSignIn = GoogleSignIn(
