@@ -36,6 +36,14 @@
 					<string>io.locl.app</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+				</array>
+			</dict>
 		</array>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>Wir verwenden deinen Standort, um dir nahegelegene Orte, Spaziergänge und Empfehlungen in locl anzuzeigen.</string>
