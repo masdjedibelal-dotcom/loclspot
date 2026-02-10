@@ -154,9 +154,7 @@ class AuthService extends ChangeNotifier {
           await supabase.auth.signInWithOAuth(
             OAuthProvider.google,
             redirectTo: AppConfig.oauthRedirectUri,
-            authScreenLaunchMode: Platform.isIOS
-                ? LaunchMode.inAppBrowserView
-                : LaunchMode.externalApplication,
+            authScreenLaunchMode: LaunchMode.externalApplication,
           );
           return;
         }
@@ -194,6 +192,15 @@ class AuthService extends ChangeNotifier {
         debugPrint('✅ AuthService: Google OAuth sign-in initiated successfully');
       }
     } catch (e) {
+      final message = e.toString();
+      // Some iOS launch errors are benign because the browser already opened
+      // and the auth state will still be updated after redirect.
+      if (!kIsWeb && message.contains('Error while launching')) {
+        if (kDebugMode) {
+          debugPrint('⚠️ AuthService: Google OAuth launch warning: $e');
+        }
+        return;
+      }
       if (kDebugMode) {
         debugPrint('❌ AuthService: Google OAuth sign-in failed: $e');
       }
