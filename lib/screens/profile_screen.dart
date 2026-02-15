@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'theme.dart';
-import '../config/app_config.dart';
 import '../models/app_user.dart';
 import '../models/place.dart';
 import 'dart:io';
@@ -331,8 +329,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
-        SizedBox(height: 24),
-        _buildLegalSection(showAccountDeletion: false),
         SizedBox(height: 32),
       ],
     );
@@ -689,8 +685,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     _buildBadgesRow(badgeLabels),
                                     SizedBox(height: 16),
                                   ],
-                                  _buildLegalSection(showAccountDeletion: true),
-                                  SizedBox(height: 16),
                                   TabBar(
                                     isScrollable: true,
                                     tabAlignment: TabAlignment.start,
@@ -984,76 +978,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildLegalSection({required bool showAccountDeletion}) {
-    return GlassSurface(
-      radius: 16,
-      blurSigma: 12,
-      overlayColor: MingaTheme.glassOverlayXXSoft,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Rechtliches & Datenschutz',
-              style: MingaTheme.bodySmall.copyWith(
-                color: MingaTheme.textSubtle,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 8),
-            if (AppConfig.termsUrl.isNotEmpty)
-              TextButton(
-                onPressed: () => _openUrl(AppConfig.termsUrl),
-                child: Text('Nutzungsbedingungen'),
-              ),
-            if (AppConfig.privacyUrl.isNotEmpty)
-              TextButton(
-                onPressed: () => _openUrl(AppConfig.privacyUrl),
-                child: Text('Datenschutzerklärung'),
-              ),
-            if (showAccountDeletion && AppConfig.accountDeletionUrl.isNotEmpty)
-              TextButton(
-                onPressed: () => _openUrl(AppConfig.accountDeletionUrl),
-                child: Text('Account löschen (Web)'),
-              ),
-            if (AppConfig.termsUrl.isEmpty &&
-                AppConfig.privacyUrl.isEmpty &&
-                (!showAccountDeletion || AppConfig.accountDeletionUrl.isEmpty))
-              Text(
-                'Links werden hier angezeigt, sobald sie konfiguriert sind.',
-                style: MingaTheme.textMuted,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ungültige URL: $url'),
-          duration: Duration(seconds: 2),
-          backgroundColor: MingaTheme.dangerRed,
-        ),
-      );
-      return;
-    }
-    final ok = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Link konnte nicht geöffnet werden.'),
-          duration: Duration(seconds: 2),
-          backgroundColor: MingaTheme.dangerRed,
-        ),
-      );
-    }
-  }
 
   void _toggleEditing(UserProfile? profile) {
     setState(() {

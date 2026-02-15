@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../config/app_config.dart';
 import 'auth_service.dart';
 import 'supabase_gate.dart';
 
@@ -15,15 +13,6 @@ class AccountDeletionService {
     final currentUser = AuthService.instance.currentUser;
     if (currentUser == null) {
       throw Exception('Kein Benutzer angemeldet.');
-    }
-
-    if (AppConfig.accountDeletionUrl.isNotEmpty) {
-      final uri = Uri.parse(AppConfig.accountDeletionUrl);
-      final ok = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-      if (!ok) {
-        throw Exception('Account-Löschseite konnte nicht geöffnet werden.');
-      }
-      return;
     }
 
     try {

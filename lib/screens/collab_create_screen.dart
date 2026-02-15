@@ -2,9 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'theme.dart';
-import '../config/app_config.dart';
 import '../data/place_repository.dart';
 import '../models/place.dart';
 import '../services/supabase_collabs_repository.dart';
@@ -201,16 +199,6 @@ class _CollabCreateScreenState extends State<CollabCreateScreen> {
                     'missbräuchlichen Inhalte veröffentlichst.',
                   ),
                   SizedBox(height: 12),
-                  if (AppConfig.termsUrl.isNotEmpty)
-                    TextButton(
-                      onPressed: () {
-                        launchUrl(
-                          Uri.parse(AppConfig.termsUrl),
-                          mode: LaunchMode.inAppBrowserView,
-                        );
-                      },
-                      child: Text('Nutzungsbedingungen lesen'),
-                    ),
                   CheckboxListTile(
                     value: agreed,
                     onChanged: (value) {
