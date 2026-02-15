@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'theme.dart';
 import '../services/supabase_collabs_repository.dart';
+import '../utils/content_filter.dart';
 import '../data/place_repository.dart';
 import '../models/collab.dart';
 import '../models/place.dart';
@@ -88,6 +89,18 @@ class _CollabEditScreenState extends State<CollabEditScreen> {
         SnackBar(
           content: Text('Bitte einen Titel eingeben'),
           duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    if (ContentFilter.containsObjectionable(title) ||
+        ContentFilter.containsObjectionable(_descriptionController.text.trim())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Bitte entferne beleidigende oder unzulässige Inhalte.'),
+          duration: Duration(seconds: 3),
+          backgroundColor: MingaTheme.dangerRed,
         ),
       );
       return;

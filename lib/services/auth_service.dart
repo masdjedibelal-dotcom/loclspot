@@ -154,7 +154,7 @@ class AuthService extends ChangeNotifier {
           await supabase.auth.signInWithOAuth(
             OAuthProvider.google,
             redirectTo: AppConfig.oauthRedirectUri,
-            authScreenLaunchMode: LaunchMode.externalApplication,
+            authScreenLaunchMode: LaunchMode.inAppBrowserView,
           );
           return;
         }
@@ -252,7 +252,7 @@ class AuthService extends ChangeNotifier {
         await supabase.auth.signInWithOAuth(
           OAuthProvider.apple,
           redirectTo: kIsWeb ? Uri.base.origin : AppConfig.oauthRedirectUri,
-          authScreenLaunchMode: LaunchMode.externalApplication,
+          authScreenLaunchMode: LaunchMode.inAppBrowserView,
         );
       }
       if (kDebugMode) {
