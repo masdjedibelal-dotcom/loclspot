@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
@@ -11,15 +10,6 @@ import '../models/app_user.dart';
 import 'supabase_gate.dart';
 
 /// Service for managing authentication state
-/// 
-/// IMPORTANT: Before using Google OAuth, configure it in Supabase Dashboard:
-/// 1. Go to Authentication > Providers > Google
-/// 2. Enable Google provider
-/// 3. Add your Google OAuth Client ID and Secret from Google Cloud Console
-/// 4. Add redirect URL: https://<your-project-ref>.supabase.co/auth/v1/callback
-/// 5. For web: In Google Cloud Console, add authorized redirect URIs:
-///    - https://<your-project-ref>.supabase.co/auth/v1/callback
-///    - http://localhost:<port>/auth/v1/callback (for local development)
 class AuthService extends ChangeNotifier {
   static AuthService? _instance;
   
@@ -116,96 +106,6 @@ class AuthService extends ChangeNotifier {
       currentUserNotifier.value = _currentUser;
     }
     notifyListeners();
-  }
-
-  /// Sign in with Google OAuth
-  /// 
-  /// IMPORTANT: Ensure Google OAuth is configured in Supabase Dashboard
-  /// See class documentation for setup instructions.
-  /// 
-  /// Throws exception if Supabase is not enabled.
-  Future<void> signInWithGoogle() async {
-    if (!SupabaseGate.isEnabled) {
-      if (kDebugMode) {
-        debugPrint('⚠️ AuthService: Google login attempted but Supabase is not enabled');
-      }
-      throw Exception('Supabase ist noch nicht konfiguriert.');
-    }
-
-    try {
-      if (kDebugMode) {
-        debugPrint('🔄 AuthService: Initiating Google OAuth sign-in...');
-      }
-      final supabase = SupabaseGate.client;
-      if (kIsWeb) {
-        // For web, Supabase handles the redirect automatically
-        // The redirect URL should be configured in Supabase Dashboard:
-        // Authentication > URL Configuration > Redirect URLs
-        await supabase.auth.signInWithOAuth(
-          OAuthProvider.google,
-          redirectTo: Uri.base.origin,
-        );
-      } else {
-        final hasNativeGoogleConfig = AppConfig.googleWebClientId.isNotEmpty &&
-            (!Platform.isIOS || AppConfig.googleIosClientId.isNotEmpty);
-
-        if (!hasNativeGoogleConfig) {
-          // Fallback: browser-based OAuth if native config is missing
-          await supabase.auth.signInWithOAuth(
-            OAuthProvider.google,
-            redirectTo: AppConfig.oauthRedirectUri,
-            authScreenLaunchMode: LaunchMode.inAppBrowserView,
-          );
-          return;
-        }
-
-        final googleSignIn = GoogleSignIn(
-          scopes: const ['email', 'profile'],
-          serverClientId: AppConfig.googleWebClientId,
-          clientId: Platform.isIOS ? AppConfig.googleIosClientId : null,
-        );
-
-        final account = await googleSignIn.signIn();
-        if (account == null) {
-          if (kDebugMode) {
-            debugPrint('ℹ️ AuthService: Google login cancelled by user');
-          }
-          return;
-        }
-
-        final googleAuth = await account.authentication;
-        final idToken = googleAuth.idToken;
-        if (idToken == null || idToken.isEmpty) {
-          throw Exception(
-            'Kein Google ID Token erhalten. Prüfe Google-Konfiguration.',
-          );
-        }
-
-        await supabase.auth.signInWithIdToken(
-          provider: OAuthProvider.google,
-          idToken: idToken,
-          accessToken: googleAuth.accessToken,
-        );
-      }
-      // User will be updated via onAuthStateChange listener
-      if (kDebugMode) {
-        debugPrint('✅ AuthService: Google OAuth sign-in initiated successfully');
-      }
-    } catch (e) {
-      final message = e.toString();
-      // Some iOS launch errors are benign because the browser already opened
-      // and the auth state will still be updated after redirect.
-      if (!kIsWeb && message.contains('Error while launching')) {
-        if (kDebugMode) {
-          debugPrint('⚠️ AuthService: Google OAuth launch warning: $e');
-        }
-        return;
-      }
-      if (kDebugMode) {
-        debugPrint('❌ AuthService: Google OAuth sign-in failed: $e');
-      }
-      throw Exception('Failed to sign in with Google: $e');
-    }
   }
 
   /// Sign in with Apple OAuth (required by App Review when other 3rd-party login is present)
