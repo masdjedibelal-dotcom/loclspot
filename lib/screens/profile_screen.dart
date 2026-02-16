@@ -6,7 +6,6 @@ import '../models/app_user.dart';
 import '../models/place.dart';
 import 'dart:io';
 import '../services/auth_service.dart';
-import '../services/account_deletion_service.dart';
 import '../services/supabase_gate.dart';
 import '../services/supabase_collabs_repository.dart';
 import '../services/supabase_profile_repository.dart';
@@ -232,6 +231,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 40),
+        // Login mit Google Button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              if (!SupabaseGate.isEnabled) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Supabase noch nicht konfiguriert.'),
+                    duration: Duration(seconds: 3),
+                    backgroundColor: MingaTheme.warningOrange,
+                  ),
+                );
+                return;
+              }
+
+              AuthService.instance.signInWithGoogle().catchError((e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Fehler beim Google Login: $e'),
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: MingaTheme.dangerRed,
+                    ),
+                  );
+                }
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MingaTheme.buttonLightBackground,
+              foregroundColor: MingaTheme.buttonLightForeground,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MingaTheme.radiusMd),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.google,
+                  size: 22,
+                  color: MingaTheme.buttonLightForeground,
+                ),
+                SizedBox(width: 12),
+                Text('Login mit Google', style: MingaTheme.body),
+              ],
+            ),
+          ),
+        ),
         if (Platform.isIOS) ...[
           SizedBox(height: 12),
           SizedBox(
@@ -326,63 +375,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             },
                             child: Text(
                               'Logout',
-                              style: MingaTheme.bodySmall.copyWith(
-                                color: MingaTheme.dangerRed,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text('Konto löschen?'),
-                                    content: Text(
-                                      'Dein Konto wird dauerhaft gelöscht. '
-                                      'Dieser Vorgang kann nicht rückgängig gemacht werden.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(context).pop(false),
-                                        child: Text('Abbrechen'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.of(context).pop(true),
-                                        child: Text(
-                                          'Löschen',
-                                          style: TextStyle(color: MingaTheme.dangerRed),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                              if (confirmed != true || !context.mounted) return;
-                              try {
-                                await AccountDeletionService.instance.requestDeletion();
-                                await AuthService.instance.signOut();
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Konto-Löschung wurde gestartet.'),
-                                    duration: Duration(seconds: 3),
-                                  ),
-                                );
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Konto-Löschung fehlgeschlagen: $e'),
-                                    duration: Duration(seconds: 3),
-                                    backgroundColor: MingaTheme.dangerRed,
-                                  ),
-                                );
-                              }
-                            },
-                            child: Text(
-                              'Konto löschen',
                               style: MingaTheme.bodySmall.copyWith(
                                 color: MingaTheme.dangerRed,
                                 fontWeight: FontWeight.w700,
@@ -927,7 +919,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
 
   void _toggleEditing(UserProfile? profile) {
     setState(() {

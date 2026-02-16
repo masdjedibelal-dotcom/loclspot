@@ -1,13 +1,11 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'theme.dart';
 import '../data/place_repository.dart';
 import '../models/place.dart';
 import '../services/supabase_collabs_repository.dart';
 import '../services/auth_service.dart';
-import '../utils/content_filter.dart';
 import '../utils/bottom_nav_padding.dart';
 import '../widgets/place_image.dart';
 import '../widgets/place_list_tile.dart';
@@ -61,11 +59,6 @@ class _CollabCreateScreenState extends State<CollabCreateScreen> {
   }
 
   Future<void> _save() async {
-    final accepted = await _ensureTermsAccepted();
-    if (!accepted) {
-      return;
-    }
-
     final title = _titleController.text.trim();
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,17 +73,6 @@ class _CollabCreateScreenState extends State<CollabCreateScreen> {
     setState(() {
       _isSaving = true;
     });
-
-    if (_containsObjectionableContent()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Bitte entferne beleidigende oder unzulässige Inhalte.'),
-          duration: Duration(seconds: 3),
-          backgroundColor: MingaTheme.dangerRed,
-        ),
-      );
-      return;
-    }
 
     final placeIds = _selectedPlaces.map((place) => place.id).toList();
 
@@ -158,79 +140,6 @@ class _CollabCreateScreenState extends State<CollabCreateScreen> {
         backgroundColor: MingaTheme.dangerRed,
       ),
     );
-  }
-
-  bool _containsObjectionableContent() {
-    final title = _titleController.text.trim();
-    final description = _descriptionController.text.trim();
-    if (ContentFilter.containsObjectionable(title)) {
-      return true;
-    }
-    if (ContentFilter.containsObjectionable(description)) {
-      return true;
-    }
-    for (final note in _placeNotes.values) {
-      if (ContentFilter.containsObjectionable(note)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  Future<bool> _ensureTermsAccepted() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('ugc_terms_accepted_v1') == true) {
-      return true;
-    }
-    if (!mounted) return false;
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        bool agreed = false;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Nutzungsbedingungen'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Bitte bestätige, dass du keine beleidigenden oder '
-                    'missbräuchlichen Inhalte veröffentlichst.',
-                  ),
-                  SizedBox(height: 12),
-                  CheckboxListTile(
-                    value: agreed,
-                    onChanged: (value) {
-                      setState(() {
-                        agreed = value ?? false;
-                      });
-                    },
-                    title: Text('Ich stimme zu'),
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text('Abbrechen'),
-                ),
-                TextButton(
-                  onPressed: agreed ? () => Navigator.of(context).pop(true) : null,
-                  child: Text('Weiter'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-    if (accepted == true) {
-      await prefs.setBool('ugc_terms_accepted_v1', true);
-      return true;
-    }
-    return false;
   }
 
   @override

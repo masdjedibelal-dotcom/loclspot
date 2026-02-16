@@ -16,16 +16,11 @@ void main() async {
   final supabaseAnonKey = AppConfig.supabaseAnonKey;
 
   if (supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty) {
-    try {
-      await Supabase.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey,
-      );
-      SupabaseGate.enabled = true;
-    } catch (e) {
-      SupabaseGate.enabled = false;
-      debugPrint('⚠️ Supabase init fehlgeschlagen – Demo-Modus: $e');
-    }
+    await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+    );
+    SupabaseGate.enabled = true;
   } else {
     SupabaseGate.enabled = false;
     debugPrint('⚠️ Supabase nicht konfiguriert – läuft im Demo-Modus');

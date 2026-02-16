@@ -4,9 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'supabase_gate.dart';
 import 'auth_service.dart';
-import 'moderation_service.dart';
 import '../models/collab.dart' as collab_models;
-import '../utils/content_filter.dart';
 
 class Collab {
   final String id;
@@ -701,13 +699,8 @@ class SupabaseCollabsRepository {
         );
       }
 
-      final blockedIds = await ModerationService.instance.getBlockedUserIds();
       return rows
           .map((row) => Collab.fromJson(Map<String, dynamic>.from(row)))
-          .where((collab) => !blockedIds.contains(collab.ownerId))
-          .where((collab) =>
-              !ContentFilter.containsObjectionable(collab.title) &&
-              !ContentFilter.containsObjectionable(collab.description))
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -781,13 +774,8 @@ class SupabaseCollabsRepository {
         );
       }
 
-      final blockedIds = await ModerationService.instance.getBlockedUserIds();
       return rows
           .map((row) => Collab.fromJson(Map<String, dynamic>.from(row)))
-          .where((collab) => !blockedIds.contains(collab.ownerId))
-          .where((collab) =>
-              !ContentFilter.containsObjectionable(collab.title) &&
-              !ContentFilter.containsObjectionable(collab.description))
           .toList();
     } catch (e) {
       if (kDebugMode) {

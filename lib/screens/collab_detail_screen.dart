@@ -24,7 +24,6 @@ import '../services/supabase_favorites_repository.dart';
 import '../services/supabase_gate.dart';
 import '../services/supabase_collabs_repository.dart';
 import '../services/supabase_profile_repository.dart';
-import '../services/moderation_service.dart';
 import '../widgets/place_list_tile.dart';
 import '../widgets/media/media_carousel.dart';
 import '../widgets/media/media_viewer.dart';
@@ -170,27 +169,6 @@ class _CollabDetailScreenState extends State<CollabDetailScreen> {
             icon: Icon(Icons.ios_share, color: MingaTheme.textPrimary),
             onPressed: () => _showShareSheet(_collabIds[_currentIndex]),
           ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_horiz, color: MingaTheme.textPrimary),
-            onSelected: (value) {
-              final collabId = _collabIds[_currentIndex];
-              if (value == 'report') {
-                _reportCollab(collabId);
-              } else if (value == 'block') {
-                _blockCreator(collabId);
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'report',
-                child: Text('Inhalt melden'),
-              ),
-              PopupMenuItem(
-                value: 'block',
-                child: Text('User blockieren'),
-              ),
-            ],
-          ),
         ],
       ),
       body: ColoredBox(
@@ -209,127 +187,6 @@ class _CollabDetailScreenState extends State<CollabDetailScreen> {
     final system = SystemCollabsStore.findById(id);
     if (system != null) return system;
     return null;
-  }
-
-  Future<void> _reportCollab(String collabId) async {
-    final reason = await _selectReportReason();
-    if (reason == null) return;
-    try {
-      await ModerationService.instance.reportContent(
-        contentType: 'collab',
-        contentId: collabId,
-        reason: reason,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Danke! Wir prüfen den Inhalt.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Meldung fehlgeschlagen: $e'),
-          duration: Duration(seconds: 3),
-          backgroundColor: MingaTheme.dangerRed,
-        ),
-      );
-    }
-  }
-
-  Future<void> _blockCreator(String collabId) async {
-    final collab = _collabDataById[collabId];
-    if (collab == null) {
-      return;
-    }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('User blockieren?'),
-          content: Text(
-            'Dieser User wird blockiert und dessen Inhalte werden '
-            'sofort ausgeblendet.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Abbrechen'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(
-                'Blockieren',
-                style: TextStyle(color: MingaTheme.dangerRed),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (confirmed != true) return;
-    try {
-      await ModerationService.instance.blockUser(
-        blockedUserId: collab.ownerId,
-        reason: 'blocked_from_collab',
-        contextType: 'collab',
-        contextId: collabId,
-      );
-      if (!mounted) return;
-      setState(() {
-        _collabIds.remove(collabId);
-        _collabDataById.remove(collabId);
-      });
-      if (_collabIds.isEmpty && mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Blockieren fehlgeschlagen: $e'),
-          duration: Duration(seconds: 3),
-          backgroundColor: MingaTheme.dangerRed,
-        ),
-      );
-    }
-  }
-
-  Future<String?> _selectReportReason() async {
-    return showModalBottomSheet<String>(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text('Spam'),
-                onTap: () => Navigator.of(context).pop('spam'),
-              ),
-              ListTile(
-                title: Text('Hassrede'),
-                onTap: () => Navigator.of(context).pop('hate'),
-              ),
-              ListTile(
-                title: Text('Nacktheit'),
-                onTap: () => Navigator.of(context).pop('nudity'),
-              ),
-              ListTile(
-                title: Text('Gewalt'),
-                onTap: () => Navigator.of(context).pop('violence'),
-              ),
-              ListTile(
-                title: Text('Sonstiges'),
-                onTap: () => Navigator.of(context).pop('other'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Future<void> _loadSystemCollabs() async {
