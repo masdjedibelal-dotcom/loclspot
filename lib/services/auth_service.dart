@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../models/app_user.dart';
+import 'block_service.dart';
 import 'supabase_gate.dart';
 
 /// Service for managing authentication state
@@ -22,6 +25,9 @@ import 'supabase_gate.dart';
 ///    - http://localhost:<port>/auth/v1/callback (for local development)
 class AuthService extends ChangeNotifier {
   static AuthService? _instance;
+  static const String _termsPrefsKey = 'terms_accepted_v1';
+  static const String _termsVersionKey = 'terms_version';
+  static const String _termsVersion = 'v1';
   
   /// Singleton instance
   static AuthService get instance {
@@ -114,8 +120,37 @@ class AuthService extends ChangeNotifier {
       
       _currentUser = newUser;
       currentUserNotifier.value = _currentUser;
+      unawaited(_syncTermsAcceptance(newUser));
+      unawaited(BlockService.instance.refresh());
     }
     notifyListeners();
+  }
+
+  Future<void> _syncTermsAcceptance(AppUser user) async {
+    if (!SupabaseGate.isEnabled) {
+      return;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final accepted = prefs.getBool(_termsPrefsKey) ?? false;
+      if (!accepted) {
+        return;
+      }
+      final version = prefs.getString(_termsVersionKey) ?? _termsVersion;
+      final supabase = SupabaseGate.client;
+      await supabase.from('user_terms').upsert(
+        {
+          'user_id': user.id,
+          'accepted_at': DateTime.now().toIso8601String(),
+          'version': version,
+        },
+        onConflict: 'user_id',
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ AuthService: Failed to sync terms acceptance: $e');
+      }
+    }
   }
 
   /// Sign in with Google OAuth
@@ -154,7 +189,9 @@ class AuthService extends ChangeNotifier {
           await supabase.auth.signInWithOAuth(
             OAuthProvider.google,
             redirectTo: AppConfig.oauthRedirectUri,
-            authScreenLaunchMode: LaunchMode.externalApplication,
+            authScreenLaunchMode: Platform.isIOS
+                ? LaunchMode.inAppBrowserView
+                : LaunchMode.externalApplication,
           );
           return;
         }
@@ -294,7 +331,44 @@ class AuthService extends ChangeNotifier {
     }
     _currentUser = null;
     currentUserNotifier.value = null;
+    BlockService.instance.clear();
     notifyListeners();
+  }
+
+  /// Delete the current user's account and associated data.
+  /// Requires a Supabase RPC function named "delete_user".
+  Future<void> deleteAccount() async {
+    if (!SupabaseGate.isEnabled) {
+      if (kDebugMode) {
+        debugPrint('⚠️ AuthService: Delete account attempted but Supabase is not enabled');
+      }
+      throw Exception('Supabase ist noch nicht konfiguriert.');
+    }
+
+    final current = _currentUser;
+    if (current == null) {
+      return;
+    }
+
+    try {
+      if (kDebugMode) {
+        debugPrint('🔄 AuthService: Deleting account for user ${current.id}');
+      }
+      final supabase = SupabaseGate.client;
+      await supabase.rpc('delete_user');
+      await supabase.auth.signOut();
+      _currentUser = null;
+      currentUserNotifier.value = null;
+      notifyListeners();
+      if (kDebugMode) {
+        debugPrint('✅ AuthService: Account deleted');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ AuthService: Delete account failed: $e');
+      }
+      throw Exception('Failed to delete account: $e');
+    }
   }
 
   /// Sign in with a mock/demo user (for fallback/demo purposes)

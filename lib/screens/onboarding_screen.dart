@@ -14,9 +14,12 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   static const String _prefsKey = 'onboarding_seen_v1';
+  static const String _termsPrefsKey = 'terms_accepted_v1';
+  static const String _termsVersion = 'v1';
   final PageController _controller = PageController();
   int _index = 0;
   bool _isSaving = false;
+  bool _termsAccepted = false;
 
   final List<_OnboardingSlide> _slides = const [
     _OnboardingSlide(
@@ -62,11 +65,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _complete() async {
     if (_isSaving) return;
+    if (!_termsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bitte akzeptiere die Nutzungsbedingungen und Community‑Regeln.',
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
     setState(() {
       _isSaving = true;
     });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefsKey, true);
+    await prefs.setBool(_termsPrefsKey, true);
+    await prefs.setString('terms_version', _termsVersion);
     if (!mounted) return;
     if (widget.onFinished != null) {
       widget.onFinished!.call();
@@ -197,6 +213,59 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               );
                             }).toList(),
                           ),
+                          if (index == _slides.length - 1) ...[
+                            const SizedBox(height: 18),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Theme(
+                                    data: Theme.of(context).copyWith(
+                                      unselectedWidgetColor:
+                                          MingaTheme.textSecondary,
+                                    ),
+                                    child: CheckboxListTile(
+                                      value: _termsAccepted,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _termsAccepted = value ?? false;
+                                        });
+                                      },
+                                      contentPadding: EdgeInsets.zero,
+                                      dense: true,
+                                      controlAffinity:
+                                          ListTileControlAffinity.leading,
+                                      title: Text(
+                                        'Ich akzeptiere die Nutzungsbedingungen und die Community‑Regeln.',
+                                        style: MingaTheme.bodySmall.copyWith(
+                                          color: MingaTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Keine beleidigenden, diskriminierenden, '
+                                    'sexuellen, gewaltverherrlichenden oder '
+                                    'illegalen Inhalte. Verstöße führen zur '
+                                    'Entfernung von Inhalten und können zur '
+                                    'Sperrung oder Löschung des Accounts '
+                                    'führen. Meldungen werden innerhalb von '
+                                    '24 Stunden geprüft.',
+                                    style: MingaTheme.bodySmall.copyWith(
+                                      color: MingaTheme.textSecondary,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     );

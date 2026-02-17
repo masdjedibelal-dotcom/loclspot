@@ -7,6 +7,7 @@ import '../models/user_presence.dart';
 import '../models/room_media_post.dart';
 import '../models/media_post.dart';
 import '../models/place.dart';
+import 'block_service.dart';
 import 'supabase_gate.dart';
 import 'auth_service.dart';
 
@@ -137,6 +138,7 @@ class SupabaseChatRepository {
           .toList();
 
       messages = await _attachMessageReactions(messages, currentUserId);
+      messages = await _filterBlockedMessages(messages);
 
       // Update cache
       _messagesCache[roomId] = messages;
@@ -153,6 +155,15 @@ class SupabaseChatRepository {
       // Return cached messages if available, otherwise empty list
       return _messagesCache[roomId] ?? [];
     }
+  }
+
+  Future<List<ChatMessage>> _filterBlockedMessages(
+    List<ChatMessage> messages,
+  ) async {
+    if (messages.isEmpty) return messages;
+    final blockedIds = await BlockService.instance.getBlockedUserIds();
+    if (blockedIds.isEmpty) return messages;
+    return messages.where((message) => !blockedIds.contains(message.userId)).toList();
   }
 
   Future<List<ChatMessage>> _attachMessageReactions(
@@ -349,6 +360,10 @@ class SupabaseChatRepository {
               Map<String, dynamic>.from(payload.newRecord),
               currentUserId: currentUserId,
             );
+
+            if (BlockService.instance.isBlockedSync(newMessage.userId)) {
+              return;
+            }
 
             // Get current messages from cache
             final messages = List<ChatMessage>.from(_messagesCache[roomId] ?? []);
@@ -1289,11 +1304,16 @@ class SupabaseChatRepository {
           .map((row) => RoomMediaPost.fromJson(Map<String, dynamic>.from(row)))
           .toList();
 
-      if (posts.isEmpty) {
-        return posts;
+      final blockedIds = await BlockService.instance.getBlockedUserIds();
+      final filteredPosts = blockedIds.isEmpty
+          ? posts
+          : posts.where((post) => !blockedIds.contains(post.userId)).toList();
+
+      if (filteredPosts.isEmpty) {
+        return filteredPosts;
       }
 
-      final postIds = posts.map((post) => post.id).toList();
+      final postIds = filteredPosts.map((post) => post.id).toList();
       final reactionMap = <String, String>{};
       final currentUser = AuthService.instance.currentUser;
       if (currentUser != null) {
@@ -1329,7 +1349,7 @@ class SupabaseChatRepository {
         perPost[reaction] = (perPost[reaction] ?? 0) + 1;
       }
 
-      return posts
+      return filteredPosts
           .map(
             (post) => RoomMediaPost(
               id: post.id,

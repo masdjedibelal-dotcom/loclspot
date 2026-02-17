@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'supabase_gate.dart';
 import 'auth_service.dart';
+import 'block_service.dart';
 import '../models/collab.dart' as collab_models;
 
 class Collab {
@@ -774,8 +775,15 @@ class SupabaseCollabsRepository {
         );
       }
 
-      return rows
+      final collabs = rows
           .map((row) => Collab.fromJson(Map<String, dynamic>.from(row)))
+          .toList();
+      final blockedIds = await BlockService.instance.getBlockedUserIds();
+      if (blockedIds.isEmpty) {
+        return collabs;
+      }
+      return collabs
+          .where((collab) => !blockedIds.contains(collab.ownerId))
           .toList();
     } catch (e) {
       if (kDebugMode) {

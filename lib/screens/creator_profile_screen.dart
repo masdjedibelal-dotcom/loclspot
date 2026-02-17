@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'theme.dart';
+import '../services/auth_service.dart';
+import '../services/block_service.dart';
 import '../services/supabase_profile_repository.dart';
 import '../services/supabase_collabs_repository.dart';
 import '../services/supabase_gate.dart';
@@ -28,12 +30,16 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
   List<Collab> _collabs = [];
   Map<String, int> _saveCounts = {};
   bool _isLoading = true;
+  bool _isReporting = false;
+  bool _isBlocked = false;
+  bool _isBlocking = false;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
     _loadCollabs();
+    _loadBlockState();
   }
 
   Future<void> _loadProfile() async {
@@ -91,6 +97,15 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
     }
   }
 
+  Future<void> _loadBlockState() async {
+    final blocked = await BlockService.instance.isBlocked(widget.userId);
+    if (mounted) {
+      setState(() {
+        _isBlocked = blocked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = _profile;
@@ -107,6 +122,22 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
           icon: Icon(Icons.arrow_back, color: MingaTheme.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            onPressed: _isReporting ? null : _reportUser,
+            icon: Icon(
+              Icons.flag_outlined,
+              color: MingaTheme.textPrimary,
+            ),
+          ),
+          IconButton(
+            onPressed: _isBlocking ? null : _toggleBlockUser,
+            icon: Icon(
+              _isBlocked ? Icons.block : Icons.block_outlined,
+              color: MingaTheme.textPrimary,
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(
@@ -217,6 +248,258 @@ class _CreatorProfileScreenState extends State<CreatorProfileScreen> {
       return '@unbekannt';
     }
     return trimmed.startsWith('@') ? trimmed : '@$trimmed';
+  }
+
+  Future<void> _reportUser() async {
+    if (!SupabaseGate.isEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Supabase noch nicht konfiguriert.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bitte zuerst einloggen.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (currentUser.id == widget.userId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Du kannst dich nicht selbst melden.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    const reasons = [
+      'Spam',
+      'Belästigung',
+      'Hassrede',
+      'Nacktheit',
+      'Gewalt',
+      'Betrug',
+      'Sonstiges',
+    ];
+    String? selectedReason;
+    final detailsController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('Profil melden'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedReason,
+                  items: reasons
+                      .map(
+                        (reason) => DropdownMenuItem(
+                          value: reason,
+                          child: Text(reason),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedReason = value;
+                    });
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Grund',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: detailsController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Details (optional)',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Abbrechen'),
+              ),
+              TextButton(
+                onPressed: selectedReason == null
+                    ? null
+                    : () => Navigator.of(context).pop(true),
+                child: const Text('Melden'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true || selectedReason == null) {
+      detailsController.dispose();
+      return;
+    }
+
+    setState(() {
+      _isReporting = true;
+    });
+    try {
+      final supabase = SupabaseGate.client;
+      await supabase.from('reports').insert({
+        'reporter_id': currentUser.id,
+        'target_type': 'profile',
+        'target_id': widget.userId,
+        'reason': selectedReason,
+        'details': detailsController.text.trim().isEmpty
+            ? null
+            : detailsController.text.trim(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Danke, wir prüfen die Meldung.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ CreatorProfileScreen: report failed: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Melden: $e'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: MingaTheme.dangerRed,
+          ),
+        );
+      }
+    } finally {
+      detailsController.dispose();
+      if (mounted) {
+        setState(() {
+          _isReporting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleBlockUser() async {
+    if (!SupabaseGate.isEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Supabase noch nicht konfiguriert.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bitte zuerst einloggen.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (currentUser.id == widget.userId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Du kannst dich nicht selbst blockieren.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final shouldBlock = !_isBlocked;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(shouldBlock ? 'Nutzer blockieren?' : 'Blockierung aufheben?'),
+        content: Text(
+          shouldBlock
+              ? 'Beiträge und Inhalte dieses Nutzers werden nicht mehr angezeigt.'
+              : 'Beiträge und Inhalte dieses Nutzers werden wieder angezeigt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(shouldBlock ? 'Blockieren' : 'Entsperren'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isBlocking = true;
+    });
+    try {
+      if (shouldBlock) {
+        await BlockService.instance.blockUser(widget.userId);
+      } else {
+        await BlockService.instance.unblockUser(widget.userId);
+      }
+      if (mounted) {
+        setState(() {
+          _isBlocked = shouldBlock;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              shouldBlock
+                  ? 'Nutzer blockiert.'
+                  : 'Blockierung aufgehoben.',
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ CreatorProfileScreen: block toggle failed: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Blockieren: $e'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: MingaTheme.dangerRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBlocking = false;
+        });
+      }
+    }
   }
 
   Widget _buildBadgesSection(UserProfile? profile) {

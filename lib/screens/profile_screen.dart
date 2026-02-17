@@ -45,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   UserProfile? _currentProfile;
   bool _isEditing = false;
   bool _isSaving = false;
+  bool _isDeletingAccount = false;
   String? _avatarUrlOverride;
   String? _avatarCacheBuster;
   String? _lastUserId;
@@ -90,6 +91,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     _profileFuture = _profileRepository.fetchUserProfile(userId);
     _lastUserId = userId;
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    if (_isDeletingAccount) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Account löschen?'),
+        content: const Text(
+          'Dein Account und deine Daten werden dauerhaft gelöscht. '
+          'Dieser Vorgang kann nicht rückgängig gemacht werden.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: MingaTheme.dangerRed,
+            ),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isDeletingAccount = true;
+    });
+    try {
+      await AuthService.instance.deleteAccount();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account wurde gelöscht.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fehler beim Löschen des Accounts: $e'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: MingaTheme.dangerRed,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeletingAccount = false;
+        });
+      }
+    }
   }
 
   Widget _buildFollowedSystemSection(List<CollabDefinition> collabs) {
@@ -370,11 +429,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
-                            onPressed: () async {
-                              await AuthService.instance.signOut();
-                            },
+                            onPressed: _isDeletingAccount
+                                ? null
+                                : () async {
+                                    await AuthService.instance.signOut();
+                                  },
                             child: Text(
                               'Logout',
+                              style: MingaTheme.bodySmall.copyWith(
+                                color: MingaTheme.dangerRed,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed:
+                                _isDeletingAccount ? null : _confirmDeleteAccount,
+                            child: Text(
+                              _isDeletingAccount
+                                  ? 'Löschen...'
+                                  : 'Account löschen',
                               style: MingaTheme.bodySmall.copyWith(
                                 color: MingaTheme.dangerRed,
                                 fontWeight: FontWeight.w700,
@@ -510,6 +585,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 12),
               ],
+              GlassSurface(
+                radius: 16,
+                blurSigma: 16,
+                overlayColor: MingaTheme.glassOverlayXSoft,
+                borderColor: Colors.transparent,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sicherheit & Moderation',
+                        style: MingaTheme.bodySmall.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: MingaTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Du kannst Inhalte melden und Nutzer blockieren. '
+                        'Meldungen werden innerhalb von 24 Stunden geprüft. '
+                        'Verstöße führen zur Entfernung von Inhalten und '
+                        'können zur Sperrung des Accounts führen.',
+                        style: MingaTheme.bodySmall.copyWith(
+                          color: MingaTheme.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
