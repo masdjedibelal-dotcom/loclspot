@@ -290,58 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 40),
-        // Login mit Google Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              if (!SupabaseGate.isEnabled) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Supabase noch nicht konfiguriert.'),
-                    duration: Duration(seconds: 3),
-                    backgroundColor: MingaTheme.warningOrange,
-                  ),
-                );
-                return;
-              }
-
-              AuthService.instance.signInWithGoogle().catchError((e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Fehler beim Google Login: $e'),
-                      duration: const Duration(seconds: 3),
-                      backgroundColor: MingaTheme.dangerRed,
-                    ),
-                  );
-                }
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: MingaTheme.buttonLightBackground,
-              foregroundColor: MingaTheme.buttonLightForeground,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MingaTheme.radiusMd),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.google,
-                  size: 22,
-                  color: MingaTheme.buttonLightForeground,
-                ),
-                SizedBox(width: 12),
-                Text('Login mit Google', style: MingaTheme.body),
-              ],
-            ),
-          ),
-        ),
         if (Platform.isIOS) ...[
-          SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

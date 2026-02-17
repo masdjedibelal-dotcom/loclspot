@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'theme.dart';
 import '../models/place.dart';
@@ -46,6 +47,7 @@ class DetailScreen extends StatefulWidget {
 }
 
 class _DetailScreenState extends State<DetailScreen> {
+  static const String _termsPrefsKey = 'terms_accepted_v1';
   final ScrollController _scrollController = ScrollController();
   final ScrollController _chatScrollController = ScrollController(); // Separate controller for chat list
   final GlobalKey _chatSectionKey = GlobalKey();
@@ -57,6 +59,7 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _isFavorite = false;
   bool _isFavoriteLoading = false;
   String? _favoritePlaceId;
+  bool _termsAccepted = true;
   
   // Use Supabase repository if enabled, otherwise fallback to local repository
   late final dynamic _chatRepository;
@@ -95,6 +98,7 @@ class _DetailScreenState extends State<DetailScreen> {
       _loadFavoriteStatus(_currentPlace!);
       _loadDistanceForPlace(_currentPlace!);
     }
+    _loadTermsAccepted();
   }
 
 
@@ -175,6 +179,49 @@ class _DetailScreenState extends State<DetailScreen> {
       _isFavorite = isFavorite;
       _isFavoriteLoading = false;
     });
+  }
+
+  Future<void> _loadTermsAccepted() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accepted = prefs.getBool(_termsPrefsKey) ?? false;
+    if (!mounted) return;
+    setState(() {
+      _termsAccepted = accepted;
+    });
+  }
+
+  Future<void> _promptTermsAcceptance() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Community‑Regeln bestätigen'),
+        content: const Text(
+          'Bitte bestätige unsere Nutzungsbedingungen und Community‑Regeln. '
+          'Keine beleidigenden, diskriminierenden, sexuellen, '
+          'gewaltverherrlichenden oder illegalen Inhalte. '
+          'Verstöße führen zur Entfernung von Inhalten und können zur '
+          'Sperrung oder Löschung des Accounts führen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Akzeptieren'),
+          ),
+        ],
+      ),
+    );
+
+    if (accepted == true) {
+      await AuthService.instance.acceptTerms();
+      if (!mounted) return;
+      setState(() {
+        _termsAccepted = true;
+      });
+    }
   }
 
   Future<void> _toggleFavorite() async {
@@ -602,6 +649,54 @@ class _DetailScreenState extends State<DetailScreen> {
                             constraints: const BoxConstraints(maxHeight: 400),
                             child: Column(
                               children: [
+                                if (!_termsAccepted)
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      12,
+                                      16,
+                                      12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: MingaTheme.warningOrange
+                                          .withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Bitte bestätige die Community‑Regeln',
+                                          style: MingaTheme.bodySmall.copyWith(
+                                            color: MingaTheme.textPrimary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Ohne Zustimmung kannst du den Chat '
+                                          'nicht öffnen.',
+                                          style: MingaTheme.bodySmall.copyWith(
+                                            color: MingaTheme.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton(
+                                            onPressed: _promptTermsAcceptance,
+                                            style: TextButton.styleFrom(
+                                              foregroundColor:
+                                                  MingaTheme.accentGreen,
+                                            ),
+                                            child: const Text('Akzeptieren'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -705,8 +800,10 @@ class _DetailScreenState extends State<DetailScreen> {
                                   child: Align(
                                     alignment: Alignment.centerRight,
                                     child: TextButton(
-                                      onPressed: () => MainShell.of(context)
-                                          ?.openPlaceChat(place.id),
+                                      onPressed: _termsAccepted
+                                          ? () => MainShell.of(context)
+                                              ?.openPlaceChat(place.id)
+                                          : _promptTermsAcceptance,
                                       style: TextButton.styleFrom(
                                         foregroundColor: MingaTheme.accentGreen,
                                       ),

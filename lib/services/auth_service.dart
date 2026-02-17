@@ -153,6 +153,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<void> acceptTerms() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_termsPrefsKey, true);
+    await prefs.setString(_termsVersionKey, _termsVersion);
+    final current = _currentUser;
+    if (current != null) {
+      await _syncTermsAcceptance(current);
+    }
+  }
+
   /// Sign in with Google OAuth
   /// 
   /// IMPORTANT: Ensure Google OAuth is configured in Supabase Dashboard
